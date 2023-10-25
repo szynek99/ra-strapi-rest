@@ -103,9 +103,14 @@ const raStrapiRest = (
         ? params.data[fieldName]
         : [params.data[fieldName]];
       data[fieldName] = fieldData.reduce((acc: any, item: any) => {
-        item.rawFile instanceof File
-          ? formData.append(`files.${fieldName}`, item.rawFile)
-          : acc.push(item.id || item._id);
+        if (item.rawFile instanceof File) {
+          formData.append(`files.${fieldName}`, item.rawFile);
+        } else {
+          if (item.id || item._id) {
+            acc.push(item.id || item._id);
+          }
+        }
+
         return acc;
       }, []);
     });
