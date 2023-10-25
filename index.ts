@@ -10,7 +10,10 @@ import {
 } from "react-admin";
 export const SingleType = "SingleType";
 
-const raStrapiRest = (apiUrl: string, httpClient = fetchUtils.fetchJson): DataProvider => {
+const raStrapiRest = (
+  apiUrl: string,
+  httpClient = fetchUtils.fetchJson
+): DataProvider => {
   /**
    * Adjusts the query parameters for Strapi, including sorting, filtering, and pagination.
    * @param params - The input parameters containing pagination, sorting, filtering, target, and ID data.
@@ -30,7 +33,9 @@ const raStrapiRest = (apiUrl: string, httpClient = fetchUtils.fetchJson): DataPr
     // Handle SORTING
     const s = params.sort;
     const sort =
-      s.field === "" ? "sort=updated_at:desc" : "sort=" + s.field + ":" + s.order.toLowerCase();
+      s.field === ""
+        ? "sort=updated_at:desc"
+        : "sort=" + s.field + ":" + s.order.toLowerCase();
 
     // Handle FILTER
     const f = params.filter;
@@ -40,7 +45,12 @@ const raStrapiRest = (apiUrl: string, httpClient = fetchUtils.fetchJson): DataPr
       if (keys[i] === "q" && f[keys[i]] !== "") {
         filter += "_q=" + f[keys[i]] + (keys[i + 1] ? "&" : "");
       } else {
-        filter += "filters[" + keys[i] + "]_eq=" + f[keys[i]] + (keys[i + 1] ? "&" : "");
+        filter +=
+          "filters[" +
+          keys[i] +
+          "]_eq=" +
+          f[keys[i]] +
+          (keys[i + 1] ? "&" : "");
       }
     }
     if (params.id && params.target && params.target.indexOf("_id") !== -1) {
@@ -51,7 +61,8 @@ const raStrapiRest = (apiUrl: string, httpClient = fetchUtils.fetchJson): DataPr
     // Handle PAGINATION
     const { page, perPage } = params.pagination;
     const start = (page - 1) * perPage;
-    const pagination = "pagination[start]=" + start + "&pagination[limit]=" + perPage;
+    const pagination =
+      "pagination[start]=" + start + "&pagination[limit]=" + perPage;
 
     return sort + "&" + pagination + "&" + filter;
   };
@@ -85,7 +96,8 @@ const raStrapiRest = (apiUrl: string, httpClient = fetchUtils.fetchJson): DataPr
     const formData = new FormData();
     const uploadFieldNames = getUploadFieldNames(params.data);
 
-    const { created_at, updated_at, createdAt, updatedAt, ...data } = params.data;
+    const { created_at, updated_at, createdAt, updatedAt, ...data } =
+      params.data;
     uploadFieldNames.forEach((fieldName) => {
       const fieldData = Array.isArray(params.data[fieldName])
         ? params.data[fieldName]
@@ -100,7 +112,10 @@ const raStrapiRest = (apiUrl: string, httpClient = fetchUtils.fetchJson): DataPr
 
     formData.append("data", JSON.stringify(data));
 
-    const response = await processRequest(url, { method: requestMethod, body: formData });
+    const response = await processRequest(url, {
+      method: requestMethod,
+      body: formData,
+    });
     return convertHTTPResponse(response, type, params);
   };
 
@@ -117,9 +132,11 @@ const raStrapiRest = (apiUrl: string, httpClient = fetchUtils.fetchJson): DataPr
       for (const key in json) {
         const { data } = json[key] || {};
         const isArray = Array.isArray(data);
-        const isMime = data && (data[0]?.attributes?.mime || data.attributes?.mime);
+        const isMime =
+          data && (data[0]?.attributes?.mime || data.attributes?.mime);
         if (!data || (isArray && data[0]?.length === 0)) continue;
-        const processUrl = (url: string) => `${apiUrl.replace(/\/api$/, "")}${url}`;
+        const processUrl = (url: string) =>
+          `${apiUrl.replace(/\/api$/, "")}${url}`;
 
         if (isArray && isMime) {
           json[key] = data.map(({ id, attributes }) => ({
@@ -131,7 +148,11 @@ const raStrapiRest = (apiUrl: string, httpClient = fetchUtils.fetchJson): DataPr
         }
 
         if (!isArray && isMime) {
-          json[key] = { id: data.id, ...data.attributes, url: processUrl(data.attributes.url) };
+          json[key] = {
+            id: data.id,
+            ...data.attributes,
+            url: processUrl(data.attributes.url),
+          };
         } else {
           json[key] = isArray ? data.map(({ id }) => id) : data.id.toString();
         }
@@ -139,10 +160,16 @@ const raStrapiRest = (apiUrl: string, httpClient = fetchUtils.fetchJson): DataPr
       return json;
     };
 
-    return Array.isArray(input) ? input.map(processItem) : [processItem(input)][0];
+    return Array.isArray(input)
+      ? input.map(processItem)
+      : [processItem(input)][0];
   };
 
-  const convertHTTPResponse = (response: any, type: string, params: any): any => {
+  const convertHTTPResponse = (
+    response: any,
+    type: string,
+    params: any
+  ): any => {
     const { json } = response;
     const raData = formatResponseForRa(json.data);
     switch (type) {
@@ -185,7 +212,12 @@ const raStrapiRest = (apiUrl: string, httpClient = fetchUtils.fetchJson): DataPr
     getMany: async (resource: string, params: any) => {
       if (params.ids.length === 0) return { data: [] };
       const ids = params.ids.filter(
-        (i: any) => !(typeof i === "object" && i.hasOwnProperty("data") && i.data === null)
+        (i: any) =>
+          !(
+            typeof i === "object" &&
+            i.hasOwnProperty("data") &&
+            i.data === null
+          )
       );
 
       const responses = await Promise.all(
@@ -196,7 +228,9 @@ const raStrapiRest = (apiUrl: string, httpClient = fetchUtils.fetchJson): DataPr
         })
       );
       return {
-        data: responses.map((response) => formatResponseForRa(response.json.data)),
+        data: responses.map((response) =>
+          formatResponseForRa(response.json.data)
+        ),
       };
     },
 
@@ -215,7 +249,8 @@ const raStrapiRest = (apiUrl: string, httpClient = fetchUtils.fetchJson): DataPr
       const options: any = {};
       options.method = "PUT";
       // Omit created_at/updated_at(RDS) and createdAt/updatedAt(Mongo) in request body
-      const { created_at, updated_at, createdAt, updatedAt, ...data } = params.data;
+      const { created_at, updated_at, createdAt, updatedAt, ...data } =
+        params.data;
       options.body = JSON.stringify({ data });
 
       const res = await processRequest(url, options);
@@ -226,7 +261,8 @@ const raStrapiRest = (apiUrl: string, httpClient = fetchUtils.fetchJson): DataPr
       const responses = await Promise.all(
         params.ids.map((id: any) => {
           // Omit created_at/updated_at(RDS) and createdAt/updatedAt(Mongo) in request body
-          const { created_at, updated_at, createdAt, updatedAt, ...data } = params.data;
+          const { created_at, updated_at, createdAt, updatedAt, ...data } =
+            params.data;
           return processRequest(`${apiUrl}/${resource}/${id}`, {
             method: "PUT",
             body: JSON.stringify(data),
@@ -234,7 +270,9 @@ const raStrapiRest = (apiUrl: string, httpClient = fetchUtils.fetchJson): DataPr
         })
       );
       return {
-        data: responses.map((response) => formatResponseForRa(response.json.data)),
+        data: responses.map((response) =>
+          formatResponseForRa(response.json.data)
+        ),
       };
     },
 
@@ -245,7 +283,7 @@ const raStrapiRest = (apiUrl: string, httpClient = fetchUtils.fetchJson): DataPr
       const url = `${apiUrl}/${resource}`;
       const res = await processRequest(url, {
         method: "POST",
-        body: JSON.stringify(params.data),
+        body: JSON.stringify({ data: params.data }),
       });
       return convertHTTPResponse(res, CREATE, { data: params.data });
     },
