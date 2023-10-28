@@ -140,14 +140,11 @@ const raStrapiRest = (
         const isMime =
           data && (data[0]?.attributes?.mime || data.attributes?.mime);
         if (!data || (isArray && data[0]?.length === 0)) continue;
-        const processUrl = (url: string) =>
-          `${apiUrl.replace(/\/api$/, "")}${url}`;
 
         if (isArray && isMime) {
           json[key] = data.map(({ id, attributes }) => ({
             id,
             ...attributes,
-            url: processUrl(attributes.url),
           }));
           continue;
         }
@@ -156,7 +153,6 @@ const raStrapiRest = (
           json[key] = {
             id: data.id,
             ...data.attributes,
-            url: processUrl(data.attributes.url),
           };
         } else {
           json[key] = isArray ? data.map(({ id }) => id) : data.id.toString();
