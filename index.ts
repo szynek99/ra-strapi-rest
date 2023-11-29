@@ -83,13 +83,17 @@ const raStrapiRest = (
   };
 
   /**
-   * Handles file uploads and data updates for a given resource.
+   *
    * @param type - The operation type, either UPDATE or a different value for creating new resources.
    * @param resource - The target resource for the file upload or data update.
    * @param params - The parameters containing the data to be uploaded or updated.
    * @returns The processed response from the server, converted to the appropriate format.
    */
-  const handleFileUpload = async (type: any, resource: any, params: any) => {
+  const handleCreateOrUpdate = async (
+    type: any,
+    resource: any,
+    params: any
+  ) => {
     const id = type === UPDATE ? `/${params.id}` : "";
     const url = `${apiUrl}/${resource}${params.id == SingleType ? "" : id}`;
     const requestMethod = type === UPDATE ? "PUT" : "POST";
@@ -234,7 +238,7 @@ const raStrapiRest = (
         ),
       };
     },
-
+    // untested - not sure if this works
     getManyReference: async (resource: string, params: any) => {
       const url = `${apiUrl}/${resource}?${adjustQueryForStrapi(params)}`;
       const res = await processRequest(url, {});
@@ -242,26 +246,12 @@ const raStrapiRest = (
     },
 
     update: async (resource: string, params: any) => {
-      if (getUploadFieldNames(params.data).length > 0)
-        return await handleFileUpload(UPDATE, resource, params);
-
-      const isSingleType = params.id === SingleType;
-      const url = `${apiUrl}/${resource}${isSingleType ? "" : "/" + params.id}`;
-      const options: any = {};
-      options.method = "PUT";
-      // Omit created_at/updated_at(RDS) and createdAt/updatedAt(Mongo) in request body
-      const { created_at, updated_at, createdAt, updatedAt, ...data } =
-        params.data;
-      options.body = JSON.stringify({ data });
-
-      const res = await processRequest(url, options);
-      return convertHTTPResponse(res, UPDATE, params);
+      return await handleCreateOrUpdate(UPDATE, resource, params);
     },
-
+    // untested - not sure if this works
     updateMany: async (resource: string, params: any) => {
       const responses = await Promise.all(
         params.ids.map((id: any) => {
-          // Omit created_at/updated_at(RDS) and createdAt/updatedAt(Mongo) in request body
           const { created_at, updated_at, createdAt, updatedAt, ...data } =
             params.data;
           return processRequest(`${apiUrl}/${resource}/${id}`, {
@@ -278,15 +268,7 @@ const raStrapiRest = (
     },
 
     create: async (resource: string, params: any) => {
-      if (getUploadFieldNames(params.data).length > 0)
-        return await handleFileUpload(CREATE, resource, params);
-
-      const url = `${apiUrl}/${resource}`;
-      const res = await processRequest(url, {
-        method: "POST",
-        body: JSON.stringify({ data: params.data }),
-      });
-      return convertHTTPResponse(res, CREATE, { data: params.data });
+      return await handleCreateOrUpdate(CREATE, resource, params);
     },
 
     delete: async (resource: string, { id }: any) => {
